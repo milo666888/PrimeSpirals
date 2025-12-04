@@ -3,6 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <title>質數分布教具：烏拉螺旋 vs 極坐標螺旋</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
   <style>
     :root{
       --bg:#020617;
@@ -54,9 +55,6 @@
       grid-template-columns:1.05fr 1.55fr;
       gap:18px;
     }
-    @media(max-width:900px){
-      .page-main{grid-template-columns:1fr;}
-    }
     .panel{
       background:var(--panel);
       border-radius:14px;
@@ -80,6 +78,7 @@
     }
     input[type="number"]{
       width:190px;
+      max-width:100%;
       padding:5px 8px;
       border-radius:8px;
       border:1px solid #1f2937;
@@ -125,6 +124,7 @@
       font-weight:700;
       font-size:14px;
       cursor:pointer;
+      width:auto;
     }
     button.main:disabled{
       opacity:.55;
@@ -156,7 +156,7 @@
     .mode-group label{
       display:inline-flex;
       align-items:center;
-      margin:0 10px 0 0;
+      margin:0 10px 4px 0;
       font-size:13px;
       cursor:pointer;
     }
@@ -178,6 +178,63 @@
       border-radius:12px;
       box-shadow:0 18px 40px rgba(0,0,0,0.65);
     }
+
+    /* ===== 手機版調整 ===== */
+    @media (max-width: 768px){
+      body{
+        align-items:flex-start;
+      }
+      .page{
+        margin:8px auto;
+        padding:10px;
+        border-radius:14px;
+        width:calc(100vw - 16px);
+      }
+      .page-header{
+        flex-direction:column;
+        align-items:flex-start;
+        gap:4px;
+        margin-bottom:6px;
+      }
+      .title{
+        font-size:18px;
+      }
+      .subtitle{
+        font-size:12px;
+      }
+      .page-main{
+        grid-template-columns:1fr;
+        gap:10px;
+      }
+      .panel{
+        padding:10px 12px 12px;
+      }
+      p{
+        font-size:12px;
+      }
+      label{
+        font-size:12px;
+      }
+      input[type="number"]{
+        width:100%;
+        font-size:13px;
+      }
+      .presets{
+        gap:4px;
+      }
+      .presets button{
+        padding:4px 8px;
+        font-size:11px;
+      }
+      button.main{
+        width:100%;
+        padding:8px 12px;
+        font-size:14px;
+      }
+      .canvas-shell{
+        padding:4px;
+      }
+    }
   </style>
 </head>
 <body>
@@ -193,11 +250,11 @@
     </div>
 
     <div class="page-main">
-      <!-- 左：控制區 -->
+      <!-- 左：控制區（手機版會在上方） -->
       <div class="panel">
         <h2>參數設定</h2>
         <p>
-          只取質數 p。<br>
+         只取質數 p。<br>
           「烏拉螺旋」：將 1～n 依方形螺旋填入格子，只用黑點標出質數位置。<br>
           「極坐標螺旋」：在平面上以 r = p、θ = p（弧度）描黑點。
         </p>
@@ -226,7 +283,7 @@
             極坐標螺旋
           </label>
           <div class="hint" style="margin-top:4px;">
-            烏拉螺旋模式建議 n ≤ 100,000，黑點分布也較清楚。
+            烏拉螺旋模式建議 n ≤ 100,000，比較不會太慢，黑點分布也較清楚。
           </div>
         </div>
 
@@ -238,7 +295,7 @@
         </div>
       </div>
 
-      <!-- 右：畫布區 -->
+      <!-- 右／下：畫布區 -->
       <div class="canvas-shell">
         <canvas id="canvas"></canvas>
       </div>
@@ -258,9 +315,18 @@
     let currentN = parseInt(inputN.value, 10) || 300000;
     let currentMode = "ulam";              // 預設先看烏拉螺旋
 
-    // ⭐ 正方形 + 高解析度畫布
+    // ⭐ 正方形 + 高解析度畫布（針對電腦 / 手機分開調整）
     function resizeSquare() {
-      const cssSize = Math.min(window.innerWidth * 0.6, window.innerHeight * 0.7);
+      const isMobile = window.innerWidth <= 768;
+      let cssSize;
+      if (isMobile) {
+        // 手機：盡量吃滿寬度，高度抓大約半～六成螢幕
+        cssSize = Math.min(window.innerWidth - 24, window.innerHeight * 0.6);
+      } else {
+        // 電腦：維持原本的比例
+        cssSize = Math.min(window.innerWidth * 0.6, window.innerHeight * 0.7);
+      }
+
       const dpr = window.devicePixelRatio || 1;
 
       logicalSize = cssSize;
@@ -339,7 +405,6 @@
         const x = ix * cell;
         const y = iy * cell;
 
-        // 黑色小方塊（近似點）
         const px = x + (cell - dot) / 2;
         const py = y + (cell - dot) / 2;
         ctx.fillRect(px, py, dot, dot);
@@ -399,10 +464,9 @@
       const sieveMs = Math.round(t1 - t0);
       const drawMs = Math.round(t2 - t1);
 
-      info.textContent =
-        `完成：n = ${N.toLocaleString()}，質數 ${cnt.toLocaleString()} 個。` +
-        ` 模式：${mode === "ulam" ? "烏拉螺旋（方形坐標）" : "極坐標螺旋"}。` +
-        ` 篩法 ${sieveMs} ms，繪圖 ${drawMs} ms。`;
+info.textContent =
+  `n = ${N.toLocaleString()}，質數 ${cnt.toLocaleString()} 個（${mode === "ulam" ? "烏拉螺旋" : "極坐標螺旋"}）。`;
+
 
       btnDraw.disabled = false;
     }
